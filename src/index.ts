@@ -18,7 +18,7 @@ export default {
     // Initial redirect to start the OIDC login flow
     if (url.pathname === "/") {
       url.searchParams.set("redirect_uri", url.origin + "/callback");
-      url.searchParams.set("client_id", "i7jp5dxriy6wg1luryopx"); // From your Logto App ID
+      url.searchParams.set("client_id", "i7jp5dxriy6wglluryopx"); // From your Logto App ID
       url.searchParams.set("response_type", "code");
       url.pathname = "/authorize";
       return Response.redirect(url.toString());
@@ -40,7 +40,7 @@ export default {
       subjects,
       providers: {
         oidc: OidcProvider({
-          clientID: "i7jp5dxriy6wg1luryopx",
+          clientID: "i7jp5dxriy6wglluryopx",
           issuer: "https://login.pestalozzi.ngo/oidc",
 	  clientSecret: "CSmMaYjMkfEuejXmzmHvg5UYrGqKd6sL",
           scopes: ["openid", "profile", "email"],
