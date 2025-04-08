@@ -18,14 +18,15 @@ export default {
     // Redirect to Logto login
     if (url.pathname === "/") {
       const authUrl = new URL("https://login.pestalozzi.ngo/sign-in");
-      
+    
       authUrl.searchParams.set("client_id", "e4el7ulbbndooljneiot2");
       authUrl.searchParams.set("redirect_uri", "https://skillshub.pestalozzi-international.workers.dev/callback");
       authUrl.searchParams.set("response_type", "code");
       authUrl.searchParams.set("scope", "openid profile email");
       authUrl.searchParams.set("prompt", "consent");
       authUrl.searchParams.set("state", crypto.randomUUID());
-      
+      authUrl.searchParams.set("interaction_mode", "signIn"); // ✅ try this
+    
       return Response.redirect(authUrl.toString());
     }
 
