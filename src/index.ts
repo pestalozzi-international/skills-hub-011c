@@ -4,7 +4,7 @@ import { OidcProvider } from "@openauthjs/openauth/provider/oidc";
 import { createSubjects } from "@openauthjs/openauth/subject";
 import { object, string } from "valibot";
 
-// Define your subject schema (for future use)
+// Define your subject schema (for future use with authorization code flow)
 const subjects = createSubjects({
   user: object({
     id: string(),
@@ -17,19 +17,20 @@ export default {
 
     // Initial redirect to start the OIDC login flow
     if (url.pathname === "/") {
-      url.searchParams.set("redirect_uri", url.origin + "/callback");
-      url.searchParams.set("client_id", "i7jp5dxriy6wglluryopx");
-      url.searchParams.set("response_type", "id_token"); // Implicit flow
-      url.searchParams.set("nonce", crypto.randomUUID()); // Required by OIDC
-      url.searchParams.set("response_mode", "form_post"); // Required to POST id_token
-      url.searchParams.set("scope", "openid profile email");
-      url.searchParams.set("prompt", "consent");
+      const authUrl = new URL("https://login.pestalozzi.ngo/oidc/authorize");
 
-      url.pathname = "/authorize";
-      return Response.redirect(url.toString());
+      authUrl.searchParams.set("client_id", "i7jp5dxriy6wglluryopx");
+      authUrl.searchParams.set("redirect_uri", "https://skillshub.pestalozzi-international.workers.dev/callback");
+      authUrl.searchParams.set("response_type", "id_token");
+      authUrl.searchParams.set("nonce", crypto.randomUUID());
+      authUrl.searchParams.set("response_mode", "form_post");
+      authUrl.searchParams.set("scope", "openid profile email");
+      authUrl.searchParams.set("prompt", "consent");
+
+      return Response.redirect(authUrl.toString());
     }
 
-    // Minimal callback to confirm the flow (can be extended later)
+    // Simple confirmation for now — Logto posts id_token to this route
     if (url.pathname === "/callback") {
       return Response.json({
         message: "OIDC flow complete!",
@@ -37,7 +38,7 @@ export default {
       });
     }
 
-    // Not used now — but retained for future use with Auth Code flow
+    // Future: Authorization Code flow logic (not used with current third-party app)
     return issuer({
       storage: CloudflareStorage({
         namespace: env.AUTH_STORAGE,
@@ -47,7 +48,7 @@ export default {
         oidc: OidcProvider({
           clientID: "i7jp5dxriy6wglluryopx",
           issuer: "https://login.pestalozzi.ngo/oidc",
-          clientSecret: "CSmMaYjMkfEuejXmzmHvg5UYrGqKd6sL", // Future use for code flow
+          clientSecret: "CSmMaYjMkfEuejXmzmHvg5UYrGqKd6sL", // For future code flow
           scopes: ["openid", "profile", "email"],
           query: {
             prompt: "consent",
@@ -73,7 +74,7 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-// For future use when enabling code flow + DB integration
+// For future: used with authorization code flow to store/fetch user
 async function getOrCreateUser(env: Env, email: string): Promise<string> {
   const result = await env.AUTH_DB.prepare(
     `
