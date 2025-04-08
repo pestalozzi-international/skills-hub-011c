@@ -4,7 +4,7 @@ import { OidcProvider } from "@openauthjs/openauth/provider/oidc";
 import { createSubjects } from "@openauthjs/openauth/subject";
 import { object, string } from "valibot";
 
-// Define your subject schema (user type)
+// Define your subject schema (for future use)
 const subjects = createSubjects({
   user: object({
     id: string(),
@@ -18,13 +18,18 @@ export default {
     // Initial redirect to start the OIDC login flow
     if (url.pathname === "/") {
       url.searchParams.set("redirect_uri", url.origin + "/callback");
-      url.searchParams.set("client_id", "i7jp5dxriy6wglluryopx"); // From your Logto App ID
-      url.searchParams.set("response_type", "id_token");
+      url.searchParams.set("client_id", "i7jp5dxriy6wglluryopx");
+      url.searchParams.set("response_type", "id_token"); // Implicit flow
+      url.searchParams.set("nonce", crypto.randomUUID()); // Required by OIDC
+      url.searchParams.set("response_mode", "form_post"); // Required to POST id_token
+      url.searchParams.set("scope", "openid profile email");
+      url.searchParams.set("prompt", "consent");
+
       url.pathname = "/authorize";
       return Response.redirect(url.toString());
     }
 
-    // Callback endpoint after login
+    // Minimal callback to confirm the flow (can be extended later)
     if (url.pathname === "/callback") {
       return Response.json({
         message: "OIDC flow complete!",
@@ -32,7 +37,7 @@ export default {
       });
     }
 
-    // OpenAuth issuer handles OIDC login, session, and subject creation
+    // Not used now — but retained for future use with Auth Code flow
     return issuer({
       storage: CloudflareStorage({
         namespace: env.AUTH_STORAGE,
@@ -42,7 +47,7 @@ export default {
         oidc: OidcProvider({
           clientID: "i7jp5dxriy6wglluryopx",
           issuer: "https://login.pestalozzi.ngo/oidc",
-	  clientSecret: "CSmMaYjMkfEuejXmzmHvg5UYrGqKd6sL",
+          clientSecret: "CSmMaYjMkfEuejXmzmHvg5UYrGqKd6sL", // Future use for code flow
           scopes: ["openid", "profile", "email"],
           query: {
             prompt: "consent",
@@ -68,7 +73,7 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-// Util to create or retrieve a user in your DB
+// For future use when enabling code flow + DB integration
 async function getOrCreateUser(env: Env, email: string): Promise<string> {
   const result = await env.AUTH_DB.prepare(
     `
