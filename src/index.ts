@@ -19,7 +19,7 @@ export default {
     if (url.pathname === "/") {
       url.searchParams.set("redirect_uri", url.origin + "/callback");
       url.searchParams.set("client_id", "i7jp5dxriy6wglluryopx"); // From your Logto App ID
-      url.searchParams.set("response_type", "code");
+      url.searchParams.set("response_type", "id_token");
       url.pathname = "/authorize";
       return Response.redirect(url.toString());
     }
