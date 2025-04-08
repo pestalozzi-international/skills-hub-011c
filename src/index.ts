@@ -23,7 +23,7 @@ export default {
       authUrl.searchParams.set("redirect_uri", "https://skillshub.pestalozzi-international.workers.dev/callback");
       authUrl.searchParams.set("response_type", "id_token");
       authUrl.searchParams.set("nonce", crypto.randomUUID());
-      authUrl.searchParams.set("response_mode", "form_post");
+      authUrl.searchParams.set("response_mode", "fragment");
       authUrl.searchParams.set("scope", "openid profile email");
       authUrl.searchParams.set("prompt", "consent");
 
