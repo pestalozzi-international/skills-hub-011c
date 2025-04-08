@@ -1,13 +1,10 @@
 import { issuer } from "@openauthjs/openauth";
 import { CloudflareStorage } from "@openauthjs/openauth/storage/cloudflare";
-import { PasswordProvider } from "@openauthjs/openauth/provider/password";
-import { PasswordUI } from "@openauthjs/openauth/ui/password";
+import { OidcProvider } from "@openauthjs/openauth/provider/oidc";
 import { createSubjects } from "@openauthjs/openauth/subject";
 import { object, string } from "valibot";
 
-// This value should be shared between the OpenAuth server Worker and other
-// client Workers that you connect to it, so the types and schema validation are
-// consistent.
+// Define your subject schema (user type)
 const subjects = createSubjects({
   user: object({
     id: string(),
@@ -16,47 +13,40 @@ const subjects = createSubjects({
 
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    // This top section is just for demo purposes. In a real setup another
-    // application would redirect the user to this Worker to be authenticated,
-    // and after signing in or registering the user would be redirected back to
-    // the application they came from. In our demo setup there is no other
-    // application, so this Worker needs to do the initial redirect and handle
-    // the callback redirect on completion.
     const url = new URL(request.url);
+
+    // Initial redirect to start the OIDC login flow
     if (url.pathname === "/") {
       url.searchParams.set("redirect_uri", url.origin + "/callback");
-      url.searchParams.set("client_id", "your-client-id");
+      url.searchParams.set("client_id", "i7jp5dxriy6wg1luryopx"); // From your Logto App ID
       url.searchParams.set("response_type", "code");
       url.pathname = "/authorize";
       return Response.redirect(url.toString());
-    } else if (url.pathname === "/callback") {
+    }
+
+    // Callback endpoint after login
+    if (url.pathname === "/callback") {
       return Response.json({
-        message: "OAuth flow complete!",
+        message: "OIDC flow complete!",
         params: Object.fromEntries(url.searchParams.entries()),
       });
     }
 
-    // The real OpenAuth server code starts here:
+    // OpenAuth issuer handles OIDC login, session, and subject creation
     return issuer({
       storage: CloudflareStorage({
         namespace: env.AUTH_STORAGE,
       }),
       subjects,
       providers: {
-        password: PasswordProvider(
-          PasswordUI({
-            // eslint-disable-next-line @typescript-eslint/require-await
-            sendCode: async (email, code) => {
-              // This is where you would email the verification code to the
-              // user, e.g. using Resend:
-              // https://resend.com/docs/send-with-cloudflare-workers
-              console.log(`Sending code ${code} to ${email}`);
-            },
-            copy: {
-              input_code: "Code (check Worker logs)",
-            },
-          }),
-        ),
+        oidc: OidcProvider({
+          clientID: "i7jp5dxriy6wg1luryopx",
+          issuer: "https://login.pestalozzi.ngo/oidc",
+          scopes: ["openid", "profile", "email"],
+          query: {
+            prompt: "consent",
+          },
+        }),
       },
       theme: {
         title: "myAuth",
@@ -77,6 +67,7 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
+// Util to create or retrieve a user in your DB
 async function getOrCreateUser(env: Env, email: string): Promise<string> {
   const result = await env.AUTH_DB.prepare(
     `
@@ -84,13 +75,15 @@ async function getOrCreateUser(env: Env, email: string): Promise<string> {
 		VALUES (?)
 		ON CONFLICT (email) DO UPDATE SET email = email
 		RETURNING id;
-		`,
+		`
   )
     .bind(email)
     .first<{ id: string }>();
+
   if (!result) {
     throw new Error(`Unable to process user: ${email}`);
   }
+
   console.log(`Found or created user ${result.id} with email ${email}`);
   return result.id;
 }
