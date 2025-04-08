@@ -42,7 +42,7 @@ export default {
         oidc: OidcProvider({
           clientID: "i7jp5dxriy6wg1luryopx",
           issuer: "https://login.pestalozzi.ngo/oidc",
-	  clientSecret: "CSmMaYjMkfEuejXmzmHvg5UYrGqKd6sL"
+	  clientSecret: "CSmMaYjMkfEuejXmzmHvg5UYrGqKd6sL",
           scopes: ["openid", "profile", "email"],
           query: {
             prompt: "consent",
